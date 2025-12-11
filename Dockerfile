@@ -9,15 +9,16 @@ RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 
 WORKDIR /src
 
-# 先复制 go.mod/go.sum 并预先下载依赖，充分利用构建缓存
+# 先复制 go.mod/go.sum 并预先下载依赖
 COPY go.mod go.sum ./
-RUN --mount=type=cache,target=/go/pkg/mod go mod download
+
+RUN go mod download
 
 # 再复制项目源码
 COPY . .
 
-RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build \
-    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/elasticsearch-alert ./cmd/alert
+# 删除 --mount 参数
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/elasticsearch-alert ./cmd/alert
 
 FROM alpine:3.18
 
@@ -31,11 +32,7 @@ WORKDIR /app
 
 COPY --from=builder /out/elasticsearch-alert /app/elasticsearch-alert
 
-# configs 目录建议通过挂载方式提供，这里不打包进镜像
-# 运行时请挂载宿主机的 ./configs 到 /app/configs
-
 USER root
 
 ENTRYPOINT ["/app/elasticsearch-alert"]
 CMD ["-config", "/app/configs/config.yaml"]
-
