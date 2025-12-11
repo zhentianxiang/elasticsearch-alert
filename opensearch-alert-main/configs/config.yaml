@@ -1,0 +1,88 @@
+opensearch:
+    host: 192.168.100.10
+    port: 9200
+    protocol: https
+    username: admin
+    password: admin
+    verify_certs: false
+    timeout: 30
+alert_engine:
+    run_interval: 60
+    buffer_time: 300
+    max_running_rules: 10
+    writeback_index: opensearch_alert_status
+    alert_time_limit: 172800
+alert_suppression:
+    enabled: true
+    realert_minutes: 2
+    exponential_realert:
+        enabled: false
+        hours: 1
+notifications:
+    email:
+        enabled: true
+        smtp_server: smtp.qq.com
+        smtp_port: 587
+        username: 2099637909@qq.com
+        password: xxxxxxxxxxxxxxxxxxxxxx
+        from_email: 2099637909@qq.com
+        to_emails: []
+        use_tls: true
+    dingtalk:
+        enabled: true
+        webhook_url: https://oapi.dingtalk.com/robot/send?access_token=3b270c49f421b589749d4ce9dxxxxxxxxxxxxxxxxxxxxxx
+        secret: SECbd1123d0b434ac3dbd4f1fxxxxxxxxxxxxxxxxxxxxxx
+        at_mobiles:
+            - "1833282xxxx"
+        at_all: false
+    wechat:
+        enabled: true
+        webhook_url: https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=5f7c6145-47f9-441c-xxxxxxxxxxxxxxxxxxxxxx
+        mentioned_list: []
+        mentioned_mobile_list:
+            - "1833282xxxx"
+        at_all: false
+    feishu:
+        enabled: true
+        webhook_url: https://open.feishu.cn/open-apis/bot/v2/hook/a06d5b36-a9d2-4408-xxxxxxxxxxxxxxxxxxxxxx
+        secret: ""
+        at_mobiles: []
+        at_all: true
+logging:
+    level: INFO
+    format: 2006-01-02 15:04:05 - %s - %s - %s
+    file: logs/opensearch-alert/alert.log
+    max_size: 10MB
+    backup_count: 5
+web:
+    enabled: true
+    host: 0.0.0.0
+    port: 8080
+    static_path: web/static
+    template_path: web/templates
+    session_secret: opensearch-alert-secret-key-2024
+database:
+    type: mysql
+    path: data/opensearch-alert.db
+    max_connections: 50
+    max_idle_connections: 5
+    host: 192.168.100.10
+    port: 3306
+    username: opensearch_alert
+    password: opensearch_alert
+    dbname: opensearch_alert
+    params: charset=utf8mb4&parseTime=true&loc=Local
+auth:
+    enabled: true
+    session_timeout: 3600
+    users:
+        - username: admin
+          password: admin123
+          role: admin
+        - username: viewer
+          password: viewer123
+          role: viewer
+rules:
+    rules_folder: data/rules
+    default_timeframe: 300
+    default_threshold: 1

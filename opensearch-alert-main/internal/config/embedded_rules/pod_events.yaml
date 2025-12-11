@@ -1,0 +1,38 @@
+# Pod 异常事件告警（统一风格）
+name: "Pod 异常事件告警"
+type: "frequency"
+index: "ks-whizard-events-*"
+threshold: 1
+timeframe: 60
+query_key:
+  - "@timestamp"
+  - "involvedObject.name"
+realert: 5
+alert:
+  - "email"
+  - "dingtalk"
+  - "wechat"
+  - "feishu"
+alert_text: "Pod 发生异常事件"
+level: ""
+enabled: true
+query:
+  bool:
+    must:
+      - term:
+          type: Warning
+      - bool:
+          minimum_should_match: 1
+          should:
+            - term:
+                reason: BackOff
+            - term:
+                reason: Failed
+            - term:
+                reason: Unhealthy
+            - term:
+                reason: FailedMount
+            - term:
+                reason: FailedAttachVolume
+
+

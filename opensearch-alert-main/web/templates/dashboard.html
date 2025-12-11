@@ -1,0 +1,170 @@
+{{template "base.html" .}}
+
+{{define "content"}}
+<!-- 统计卡片 -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            总告警数
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalAlerts">
+                            {{.AlertStats.TotalAlerts}}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-exclamation-triangle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-danger shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                            严重告警
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="criticalAlerts">
+                            {{.AlertStats.LevelStats.Critical}}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-x-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            高优先级
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="highAlerts">
+                            {{.AlertStats.LevelStats.High}}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-exclamation-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            活跃规则
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="activeRules">
+                            0
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-gear fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 图表区域 -->
+<div class="row mb-4">
+    <!-- 告警级别分布饼图 -->
+    <div class="col-xl-4 col-lg-5">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">告警级别分布</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="levelChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 告警时间趋势图 -->
+    <div class="col-xl-8 col-lg-7">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">告警时间趋势</h6>
+                <div class="dropdown no-arrow">
+                    <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        时间范围
+                    </button>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="#" onclick="updateTimeRange(1)">最近1小时</a>
+                        <a class="dropdown-item" href="#" onclick="updateTimeRange(6)">最近6小时</a>
+                        <a class="dropdown-item" href="#" onclick="updateTimeRange(24)">最近24小时</a>
+                        <a class="dropdown-item" href="#" onclick="updateTimeRange(168)">最近7天</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 最近告警列表 -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">最近告警</h6>
+                <a href="/alerts" class="btn btn-sm btn-outline-primary">查看全部</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="recentAlertsTable">
+                        <thead>
+                            <tr>
+                                <th>时间</th>
+                                <th>规则名称</th>
+                                <th>级别</th>
+                                <th>消息</th>
+                                <th>匹配数</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{range .AlertStats.RecentAlerts}}
+                            <tr>
+                                <td>{{.Timestamp.Format "2006-01-02 15:04:05"}}</td>
+                                <td>{{.RuleName}}</td>
+                                <td><span class="badge bg-{{if eq .Level "Critical"}}danger{{else if eq .Level "High"}}warning{{else if eq .Level "Medium"}}info{{else if eq .Level "Low"}}secondary{{else}}primary{{end}}">{{.Level}}</span></td>
+                                <td class="text-truncate" style="max-width: 300px;" title="{{.Message}}">{{.Message}}</td>
+                                <td>{{.Count}}</td>
+                            </tr>
+                            {{end}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}
+
+{{define "scripts"}}
+<script src="/static/js/dashboard.js"></script>
+{{end}}

@@ -1,0 +1,42 @@
+# 规则名称（便于区分与告警标题展示）
+name: "系统 ERROR 日志告警（全索引）"
+
+# 规则说明（会出现在告警正文开头，推荐写清监控目的）
+description: "监控所有 k8s-app-* 索引中的 ERROR 级别应用日志，用于快速发现严重错误"
+
+# 匹配的索引模式（支持通配符 *），建议覆盖每日分索引
+index: "k8s-app-*"
+
+# 调度表达式（cron，秒 分 时 日 月 星期），本引擎使用“秒级 cron”，必须 6 字段
+# 这里设置为每 1 分钟评估一次
+cron: "0 */1 * * * *"
+
+# 时间窗（相对时间范围），用于限定查询最近一段时间的日志
+timeWindow: "5m"
+
+# 告警级别（仅用于通知展示，不影响查询逻辑）
+severity: "High"
+
+# 查询 DSL：筛选包含 ERROR/Exception 等关键字的日志
+dsl:
+  bool:
+    filter:
+      - query_string:
+          query: 'message: "*ERROR*" OR message: "*Error*" OR message: "*Exception*" OR message: "*Throwable*"'
+          analyze_wildcard: true
+
+# 阈值：命中总数需要“大于”该值才会触发告警
+# 可以根据业务规模调整，例如 10/20/50
+threshold:
+  countGt: 10
+
+# 去重/静默期：同一规则触发后，至少间隔多长时间才允许再次触发
+dedup:
+  quietPeriod: "10m"
+
+# 通知渠道：可选 console、webhook、feishu、dingtalk、wechat、email
+alerts:
+  #channels: ["feishu", "dingtalk", "wechat", "email", "console"]
+  channels: ["feishu", "dingtalk", "wechat", "email", "console"]
+
+

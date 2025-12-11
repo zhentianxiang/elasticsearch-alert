@@ -1,0 +1,44 @@
+name: "安全审计告警"
+type: "any"
+index: "ks-whizard-auditing-*"
+threshold: 1
+timeframe: 60
+query_key:
+  - "@timestamp"
+  - "AuditID"
+realert: 0
+alert:
+  - "email"
+  - "dingtalk"
+  - "wechat"
+  - "feishu"
+alert_text: "检测到安全相关操作"
+level: "Critical"
+enabled: true
+query:
+  bool:
+    must:
+      - bool:
+          should:
+            - term:
+                Level: "Error"
+            - term:
+                Verb: "delete"
+            - term:
+                Verb: "create"
+            - term:
+                Verb: "update"
+          minimum_should_match: 1
+      - bool:
+          should:
+            - term:
+                "ObjectRef.Resource": "secrets"
+            - term:
+                "ObjectRef.Resource": "configmaps"
+            - term:
+                "ObjectRef.Resource": "roles"
+            - term:
+                "ObjectRef.Resource": "rolebindings"
+          minimum_should_match: 1
+
+

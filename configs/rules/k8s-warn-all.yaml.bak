@@ -1,0 +1,39 @@
+# 规则名称（便于区分与告警标题展示）
+name: "系统 WARN 日志告警（全索引）"
+
+# 规则说明（会出现在告警正文开头，推荐写清监控目的）
+description: "监控所有 k8s-app-* 索引中的 WARN 级别应用日志，用于提前发现潜在风险"
+
+# 匹配的索引模式（支持通配符 *）
+index: "k8s-app-*"
+
+# 调度表达式：每 1 分钟评估一次
+cron: "0 */1 * * * *"
+
+# 时间窗：最近 5 分钟
+timeWindow: "5m"
+
+# 告警级别（仅用于通知展示）
+severity: "Medium"
+
+# 查询 DSL：筛选包含 WARN/WARNING 等关键字的日志
+dsl:
+  bool:
+    filter:
+      - query_string:
+          query: 'message: "*WARN*" OR message: "*Warning*" OR message: "*WARNING*"'
+          analyze_wildcard: true
+
+# 阈值：WARN 日志通常更多，阈值可适当高一些
+threshold:
+  countGt: 50
+
+# 去重/静默期
+dedup:
+  quietPeriod: "10m"
+
+# 通知渠道
+alerts:
+  channels: ["feishu", "dingtalk", "wechat", "email", "console"]
+
+

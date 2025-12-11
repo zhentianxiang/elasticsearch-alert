@@ -1,0 +1,332 @@
+{{define "content"}}
+<!-- 配置管理 -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">配置管理</h6>
+                <div>
+                    <button class="btn btn-sm btn-primary" onclick="loadConfig()">
+                        <i class="bi bi-arrow-clockwise"></i> 刷新
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="configContainer">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">加载中...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 配置编辑模态框 -->
+<div class="modal fade" id="configEditModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="configEditTitle">编辑配置</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="configEditForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>OpenSearch 配置</h6>
+                            <div class="mb-3">
+                                <label for="opensearchHost" class="form-label">主机地址</label>
+                                <input type="text" class="form-control" id="opensearchHost">
+                            </div>
+                            <div class="mb-3">
+                                <label for="opensearchPort" class="form-label">端口</label>
+                                <input type="number" class="form-control" id="opensearchPort">
+                            </div>
+                            <div class="mb-3">
+                                <label for="opensearchProtocol" class="form-label">协议</label>
+                                <select class="form-select" id="opensearchProtocol">
+                                    <option value="http">HTTP</option>
+                                    <option value="https">HTTPS</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="opensearchUsername" class="form-label">用户名</label>
+                                <input type="text" class="form-control" id="opensearchUsername">
+                            </div>
+                            <div class="mb-3">
+                                <label for="opensearchPassword" class="form-label">密码</label>
+                                <input type="password" class="form-control" id="opensearchPassword">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>告警引擎配置</h6>
+                            <div class="mb-3">
+                                <label for="runInterval" class="form-label">检查间隔 (秒)</label>
+                                <input type="number" class="form-control" id="runInterval">
+                            </div>
+                            <div class="mb-3">
+                                <label for="bufferTime" class="form-label">缓冲时间 (秒)</label>
+                                <input type="number" class="form-control" id="bufferTime">
+                            </div>
+                            <div class="mb-3">
+                                <label for="maxRunningRules" class="form-label">最大并发规则数</label>
+                                <input type="number" class="form-control" id="maxRunningRules">
+                            </div>
+                            <div class="mb-3">
+                                <label for="writebackIndex" class="form-label">状态索引</label>
+                                <input type="text" class="form-control" id="writebackIndex">
+                            </div>
+                            <div class="mb-3">
+                                <label for="alertTimeLimit" class="form-label">告警保留时间 (秒)</label>
+                                <input type="number" class="form-control" id="alertTimeLimit">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Web 服务配置</h6>
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="webEnabled">
+                                    <label class="form-check-label" for="webEnabled">启用 Web 服务</label>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="webHost" class="form-label">监听地址</label>
+                                <input type="text" class="form-control" id="webHost">
+                            </div>
+                            <div class="mb-3">
+                                <label for="webPort" class="form-label">端口</label>
+                                <input type="number" class="form-control" id="webPort">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>数据库配置</h6>
+                            <div class="mb-3">
+                                <label for="dbType" class="form-label">数据库类型</label>
+                                <select class="form-select" id="dbType">
+                                    <option value="sqlite">SQLite</option>
+                                    <option value="mysql">MySQL 8.0+</option>
+                                </select>
+                            </div>
+                            <div id="mysqlFields" class="d-none">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="mysqlHost" class="form-label">主机</label>
+                                        <input type="text" class="form-control" id="mysqlHost" placeholder="127.0.0.1">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="mysqlPort" class="form-label">端口</label>
+                                        <input type="number" class="form-control" id="mysqlPort" value="3306">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="mysqlUser" class="form-label">用户名</label>
+                                        <input type="text" class="form-control" id="mysqlUser">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="mysqlPass" class="form-label">密码</label>
+                                        <input type="password" class="form-control" id="mysqlPass">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="mysqlDB" class="form-label">数据库名</label>
+                                    <input type="text" class="form-control" id="mysqlDB">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="mysqlParams" class="form-label">额外参数</label>
+                                    <input type="text" class="form-control" id="mysqlParams" placeholder="charset=utf8mb4&parseTime=true&loc=Local">
+                                </div>
+                            </div>
+                            <div class="mb-3" id="dbPathGroup">
+                                <label for="dbPath" class="form-label">数据库路径</label>
+                                <input type="text" class="form-control" id="dbPath">
+                            </div>
+                            <div class="mb-3">
+                                <label for="maxConnections" class="form-label">最大连接数</label>
+                                <input type="number" class="form-control" id="maxConnections">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <h6>通知渠道配置</h6>
+                            <div class="accordion" id="notificationAccordion">
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#emailConfig">
+                                            邮件通知
+                                        </button>
+                                    </h2>
+                                    <div id="emailConfig" class="accordion-collapse collapse show" data-bs-parent="#notificationAccordion">
+                                        <div class="accordion-body">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="form-check form-switch mb-3">
+                                                        <input class="form-check-input" type="checkbox" id="emailEnabled">
+                                                        <label class="form-check-label" for="emailEnabled">启用邮件通知</label>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="smtpServer" class="form-label">SMTP 服务器</label>
+                                                        <input type="text" class="form-control" id="smtpServer">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="smtpPort" class="form-label">SMTP 端口</label>
+                                                        <input type="number" class="form-control" id="smtpPort">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="smtpUsername" class="form-label">用户名</label>
+                                                        <input type="text" class="form-control" id="smtpUsername">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="smtpPassword" class="form-label">密码</label>
+                                                        <input type="password" class="form-control" id="smtpPassword">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="fromEmail" class="form-label">发件人邮箱</label>
+                                                        <input type="email" class="form-control" id="fromEmail">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dingtalkConfig">
+                                            钉钉通知
+                                        </button>
+                                    </h2>
+                                    <div id="dingtalkConfig" class="accordion-collapse collapse" data-bs-parent="#notificationAccordion">
+                                        <div class="accordion-body">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="form-check form-switch mb-3">
+                                                        <input class="form-check-input" type="checkbox" id="dingtalkEnabled">
+                                                        <label class="form-check-label" for="dingtalkEnabled">启用钉钉通知</label>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="dingtalkWebhook" class="form-label">Webhook URL</label>
+                                                        <input type="url" class="form-control" id="dingtalkWebhook">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="dingtalkSecret" class="form-label">签名密钥</label>
+                                                        <input type="text" class="form-control" id="dingtalkSecret">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="dingtalkAtMobiles" class="form-label">@手机号 (用逗号分隔)</label>
+                                                        <input type="text" class="form-control" id="dingtalkAtMobiles">
+                                                    </div>
+                                                    <div class="form-check form-switch mb-3">
+                                                        <input class="form-check-input" type="checkbox" id="dingtalkAtAll">
+                                                        <label class="form-check-label" for="dingtalkAtAll">@所有人</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#wechatConfig">
+                                            企业微信通知
+                                        </button>
+                                    </h2>
+                                    <div id="wechatConfig" class="accordion-collapse collapse" data-bs-parent="#notificationAccordion">
+                                        <div class="accordion-body">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="form-check form-switch mb-3">
+                                                        <input class="form-check-input" type="checkbox" id="wechatEnabled">
+                                                        <label class="form-check-label" for="wechatEnabled">启用企业微信通知</label>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="wechatWebhook" class="form-label">Webhook URL</label>
+                                                        <input type="url" class="form-control" id="wechatWebhook">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="wechatMentionedMobiles" class="form-label">@手机号 (用逗号分隔)</label>
+                                                        <input type="text" class="form-control" id="wechatMentionedMobiles">
+                                                    </div>
+                                                    <div class="form-check form-switch mb-3">
+                                                        <input class="form-check-input" type="checkbox" id="wechatAtAll">
+                                                        <label class="form-check-label" for="wechatAtAll">@所有人</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#feishuConfig">
+                                            飞书通知
+                                        </button>
+                                    </h2>
+                                    <div id="feishuConfig" class="accordion-collapse collapse" data-bs-parent="#notificationAccordion">
+                                        <div class="accordion-body">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="form-check form-switch mb-3">
+                                                        <input class="form-check-input" type="checkbox" id="feishuEnabled">
+                                                        <label class="form-check-label" for="feishuEnabled">启用飞书通知</label>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="feishuWebhook" class="form-label">Webhook URL</label>
+                                                        <input type="url" class="form-control" id="feishuWebhook">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="feishuSecret" class="form-label">签名密钥</label>
+                                                        <input type="text" class="form-control" id="feishuSecret">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="feishuAtMobiles" class="form-label">@手机号 (用逗号分隔)</label>
+                                                        <input type="text" class="form-control" id="feishuAtMobiles">
+                                                    </div>
+                                                    <div class="form-check form-switch mb-3">
+                                                        <input class="form-check-input" type="checkbox" id="feishuAtAll">
+                                                        <label class="form-check-label" for="feishuAtAll">@所有人</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="saveConfigForm()">保存配置</button>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}
+
+{{define "scripts"}}
+<script src="/static/js/config.js"></script>
+{{end}}
