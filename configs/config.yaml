@@ -1,5 +1,5 @@
 elasticsearch:
-  addresses: ["http://192.168.233.250:30900"]
+  addresses: ["http://localhost:9200"]
   username: ""
   password: ""
   tlsSkipVerify: false
@@ -18,10 +18,7 @@ rules:
 web:
   enabled: true
   listen: ":8080"
-  baseURL: "http://192.168.233.250:8080"
-
-logging:
-  level: "INFO"   # 可选: INFO 或 DEBUG（不区分大小写）
+  baseURL: "http://localhost:8080"
 
 notifications:
   webhook:
@@ -29,24 +26,24 @@ notifications:
     headers: {}
     timeout: "5s"
   feishu:
-    webhook: "https://open.feishu.cn/open-apis/bot/v2/hook/a06d5b36-a9d2-4408-a1dc-5ba73810b20c"
+    webhook: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
     enableAtAll: true
     timeout: "5s"
     titlePrefix: "[日志告警]"
     contentIntro: "检测到规则触发，以下为摘要与样例："
   dingtalk:
-    webhook: "https://oapi.dingtalk.com/robot/send?access_token=0b7a9b60354831ec83f47ce13ba151b8e957cd8740abca125d820802eb1cebf0"
-    secret: "SECbd1123d0b434ac3dbd4f1f118f6148bafa392090699e87eb02012953bf2aeeed"
+    webhook: "https://oapi.dingtalk.com/robot/send?access_token=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+    secret: "SECbd1123d0b434ac3dbd4f1f118f6148bafa3xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx""
     enableAtAll: true
     timeout: "5s"
   wechat:
-    webhook: "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=5f7c6145-47f9-441c-a020-f92b543a3aad"
+    webhook: "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
     timeout: "5s"
   email:
     host: "smtp.qq.com"
     port: 587
     username: "2099637909@qq.com"
-    password: "axfemcfxzkspcheb"
+    password: "xxxxxxxxxxxxxxxxx"
     from: "2099637909@qq.com"
     to: ["2099637909@qq.com"]
     useTLS: false
