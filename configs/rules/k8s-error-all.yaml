@@ -22,13 +22,12 @@ dsl:
   bool:
     filter:
       - query_string:
-          query: 'message: "*ERROR*" OR message: "*Error*" OR message: "*Exception*" OR message: "*Throwable*"'
-          analyze_wildcard: true
+          query: 'message:(error OR ERROR OR exception OR Exception OR throwable OR Throwable)'
 
 # 阈值：命中总数需要“大于”该值才会触发告警
 # 可以根据业务规模调整，例如 10/20/50
 threshold:
-  countGt: 10
+  countGt: 0
 
 # 去重/静默期：同一规则触发后，至少间隔多长时间才允许再次触发
 dedup:
@@ -37,6 +36,4 @@ dedup:
 # 通知渠道：可选 console、webhook、feishu、dingtalk、wechat、email
 alerts:
   #channels: ["feishu", "dingtalk", "wechat", "email", "console"]
-  channels: ["feishu", "dingtalk", "wechat", "email", "console"]
-
-
+  channels: ["feishu", "console"]

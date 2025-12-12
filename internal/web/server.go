@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"log"
 	"net/http"
 
 	"elasticsearch-alert/internal/config"
 	eswrap "elasticsearch-alert/internal/elasticsearch"
+	"elasticsearch-alert/internal/logging"
 )
 
 // Server 提供一个简单的只读 Web 页面，用于查看告警命中的单条日志详情。
@@ -28,7 +28,7 @@ func NewServer(cfg *config.Config, es *eswrap.Client) *Server {
 // 建议在单独的 goroutine 中启动。
 func (s *Server) Start() error {
 	if !s.cfg.Web.Enabled {
-		log.Printf("web server disabled by config")
+		logging.Infof("Web 服务未开启（配置中 web.enabled=false）")
 		return nil
 	}
 
@@ -40,7 +40,7 @@ func (s *Server) Start() error {
 	if addr == "" {
 		addr = ":8080"
 	}
-	log.Printf("web server listening on %s", addr)
+	logging.Infof("Web 服务已启动，监听地址=%s", addr)
 	return http.ListenAndServe(addr, mux)
 }
 
@@ -53,18 +53,18 @@ func (s *Server) handleLogDetail(w http.ResponseWriter, r *http.Request) {
 	index := r.URL.Query().Get("index")
 	id := r.URL.Query().Get("id")
 	if index == "" || id == "" {
-		http.Error(w, "missing index or id", http.StatusBadRequest)
+		http.Error(w, "缺少 index 或 id 参数", http.StatusBadRequest)
 		return
 	}
 
 	res, err := s.es.Get(index, id)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("query error: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("查询日志失败: %v", err), http.StatusInternalServerError)
 		return
 	}
 	defer res.Body.Close()
 	if res.IsError() {
-		http.Error(w, fmt.Sprintf("search error: %s", res.String()), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Elasticsearch 返回错误: %s", res.String()), http.StatusInternalServerError)
 		return
 	}
 	var doc struct {
@@ -73,7 +73,7 @@ func (s *Server) handleLogDetail(w http.ResponseWriter, r *http.Request) {
 		Source map[string]interface{} `json:"_source"`
 	}
 	if err := json.NewDecoder(res.Body).Decode(&doc); err != nil {
-		http.Error(w, fmt.Sprintf("decode body error: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("解析 Elasticsearch 响应失败: %v", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -121,7 +121,7 @@ func (s *Server) handleLogDetail(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.New("log-detail").Parse(logDetailHTML))
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := tmpl.Execute(w, data); err != nil {
-		log.Printf("render template error: %v", err)
+		logging.Errorf("渲染日志详情页面失败: %v", err)
 	}
 }
 

@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/url"
 	"strings"
 	"time"
@@ -14,6 +13,7 @@ import (
 
 	"elasticsearch-alert/internal/config"
 	eswrap "elasticsearch-alert/internal/elasticsearch"
+	"elasticsearch-alert/internal/logging"
 	"elasticsearch-alert/internal/notification"
 	"os"
 	"path/filepath"
@@ -33,6 +33,11 @@ type Engine struct {
 	lastAlertAt  map[string]time.Time
 	defaultQuiet time.Duration
 	sampleSize   int
+}
+
+// Rules 返回当前加载的所有规则（只读使用）
+func (e *Engine) Rules() []Rule {
+	return e.rules
 }
 
 func NewEngine(cfg *config.Config, es *eswrap.Client, notifiers []notification.Notifier) (*Engine, error) {
@@ -63,9 +68,9 @@ func (e *Engine) Start() error {
 		r := e.rules[i]
 		_, err := e.cron.AddFunc(r.Cron, func() { e.executeRule(r) })
 		if err != nil {
-			return fmt.Errorf("add cron for rule %q: %w", r.Name, err)
+			return fmt.Errorf("为规则 %q 添加定时任务失败: %w", r.Name, err)
 		}
-		log.Printf("rule registered: %s cron=%s window=%s", r.Name, r.Cron, r.TimeWindow)
+		logging.Infof("规则已注册: %s cron=%s 窗口=%s", r.Name, r.Cron, r.TimeWindow)
 	}
 	e.cron.Start()
 	return nil
@@ -107,21 +112,34 @@ func (e *Engine) loadRules(dir string) error {
 func (e *Engine) executeRule(r Rule) {
 	defer func() {
 		if rec := recover(); rec != nil {
-			log.Printf("panic in rule %s: %v", r.Name, rec)
+			logging.Errorf("规则 %s 执行发生 panic: %v", r.Name, rec)
 		}
 	}()
 	now := time.Now().In(e.location)
+	logging.Debugf("规则定时触发: %s 时间=%s", r.Name, now.Format("2006-01-02 15:04:05"))
+
 	if !e.shouldFire(r, now) {
+		logging.Debugf("规则 %s 跳过执行（静默期内）", r.Name)
 		return
 	}
+
 	count, samples, err := e.queryCountAndSamples(r)
 	if err != nil {
-		log.Printf("rule %s query error: %v", r.Name, err)
+		logging.Errorf("规则 %s 查询出错: %v", r.Name, err)
 		return
 	}
+	logging.Debugf("规则 %s 查询完成: 命中=%d 窗口=%s", r.Name, count, r.TimeWindow)
+
 	if !e.hitThreshold(r, count) {
+		if r.Threshold.CountGt != nil {
+			logging.Debugf("规则 %s 未触发: 命中=%d 阈值=>%d", r.Name, count, *r.Threshold.CountGt)
+		} else {
+			logging.Debugf("规则 %s 未触发: 未配置阈值 命中=%d", r.Name, count)
+		}
 		return
 	}
+	logging.Infof("规则 %s 触发告警: 命中=%d 通知渠道=%v", r.Name, count, r.Alerts.Channels)
+
 	title := fmt.Sprintf("[Elasticsearch Alert] %s", r.Name)
 	body := e.renderBody(r, count, samples)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -130,7 +148,9 @@ func (e *Engine) executeRule(r Rule) {
 		for _, n := range e.notifiers {
 			if n.Name() == ch || (ch == "console" && n.Name() == "console") {
 				if err := n.Send(ctx, title, body); err != nil {
-					log.Printf("send alert via %s error: %v", n.Name(), err)
+					logging.Errorf("通过渠道 %s 发送告警失败: %v", n.Name(), err)
+				} else {
+					logging.Debugf("通过渠道 %s 发送告警成功", n.Name())
 				}
 			}
 		}

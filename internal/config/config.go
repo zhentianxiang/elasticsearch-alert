@@ -14,6 +14,7 @@ type Config struct {
 	Rules         RulesConfig         `yaml:"rules"`
 	Notifications Notifications       `yaml:"notifications"`
 	Web           WebConfig           `yaml:"web"`
+	Logging       LoggingConfig       `yaml:"logging"`
 }
 
 type ElasticsearchConfig struct {
@@ -75,6 +76,12 @@ type WebConfig struct {
 	BaseURL string `yaml:"baseURL"` // 对外访问的基础地址，用于在通知中生成跳转链接，如 "http://alert.example.com:8080"
 }
 
+// LoggingConfig 控制日志级别
+type LoggingConfig struct {
+	// Level 支持 INFO / DEBUG（大小写不敏感），默认 INFO。
+	Level string `yaml:"level"`
+}
+
 type WebhookConfig struct {
 	URL     string            `yaml:"url"`
 	Headers map[string]string `yaml:"headers"`
@@ -134,6 +141,13 @@ func Load(path string) (*Config, error) {
 	}
 	if cfg.Web.Listen == "" {
 		cfg.Web.Listen = ":8080"
+	}
+	if cfg.Logging.Level == "" {
+		cfg.Logging.Level = "INFO"
+	}
+	// 环境变量 LOG_LEVEL 优先级高于配置文件
+	if v := os.Getenv("LOG_LEVEL"); v != "" {
+		cfg.Logging.Level = v
 	}
 	return &cfg, nil
 }
