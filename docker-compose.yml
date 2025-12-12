@@ -12,7 +12,3 @@ services:
     # 挂载配置目录，容器内使用 /app/configs/config.yaml
     volumes:
       - ./configs:/app/configs:ro
-    # 如果你希望将日志单独落盘，可以再挂载一个目录：
-    # - ./logs:/var/log/elasticsearch-alert
-
-

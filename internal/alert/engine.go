@@ -189,6 +189,8 @@ func (e *Engine) renderBody(r Rule, count int, samples []map[string]any) string 
 	if len(samples) > 0 {
 		doc := samples[0]
 		ts, _ := doc["@timestamp"].(string)
+		indexName, _ := doc["_index"].(string)
+		docID, _ := doc["_id"].(string)
 		node, _ := doc["kubernetes_host"].(string)
 		ns, _ := doc["kubernetes_namespace_name"].(string)
 		pod, _ := doc["kubernetes_pod_name"].(string)
@@ -223,6 +225,16 @@ func (e *Engine) renderBody(r Rule, count int, samples []map[string]any) string 
 			if truncated {
 				b.WriteString("\n...(日志内容较长，已截断显示)")
 			}
+			b.WriteString("\n")
+		}
+
+		// 详细日志链接：指向 Elasticsearch 中该条文档的 _doc API，仅查看本次命中的这一条日志
+		if indexName != "" && docID != "" && len(e.cfg.Elasticsearch.Addresses) > 0 {
+			base := e.cfg.Elasticsearch.Addresses[0]
+			base = strings.TrimRight(base, "/")
+			detailURL := fmt.Sprintf("%s/%s/_doc/%s?pretty", base, indexName, docID)
+			b.WriteString("\n🔗 **详细日志链接：** ")
+			b.WriteString(detailURL)
 			b.WriteString("\n")
 		}
 	}
@@ -291,6 +303,8 @@ func (e *Engine) queryCountAndSamples(r Rule) (int, []map[string]any, error) {
 				Value int `json:"value"`
 			} `json:"total"`
 			Hits []struct {
+				Index  string         `json:"_index"`
+				ID     string         `json:"_id"`
 				Source map[string]any `json:"_source"`
 			} `json:"hits"`
 		} `json:"hits"`
@@ -300,7 +314,14 @@ func (e *Engine) queryCountAndSamples(r Rule) (int, []map[string]any, error) {
 	}
 	samples := make([]map[string]any, 0, len(parsed.Hits.Hits))
 	for _, h := range parsed.Hits.Hits {
-		samples = append(samples, h.Source)
+		doc := h.Source
+		if doc == nil {
+			doc = make(map[string]any)
+		}
+		// 将 _index 与 _id 一并放入样例文档中，便于后续生成详细日志链接
+		doc["_index"] = h.Index
+		doc["_id"] = h.ID
+		samples = append(samples, doc)
 	}
 	return parsed.Hits.Total.Value, samples, nil
 }
