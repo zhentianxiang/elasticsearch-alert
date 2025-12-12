@@ -13,6 +13,7 @@ type Config struct {
 	Scheduler     SchedulerConfig     `yaml:"scheduler"`
 	Rules         RulesConfig         `yaml:"rules"`
 	Notifications Notifications       `yaml:"notifications"`
+	Web           WebConfig           `yaml:"web"`
 }
 
 type ElasticsearchConfig struct {
@@ -65,6 +66,13 @@ type Notifications struct {
 	DingTalk DingTalkConfig `yaml:"dingtalk"`
 	WeChat   WeChatConfig   `yaml:"wechat"`
 	Email    EmailConfig    `yaml:"email"`
+}
+
+// WebConfig 控制内置 HTTP Web 服务（查看单条日志详情）
+type WebConfig struct {
+	Enabled bool   `yaml:"enabled"` // 是否开启 Web 服务
+	Listen  string `yaml:"listen"`  // 监听地址，如 ":8080"
+	BaseURL string `yaml:"baseURL"` // 对外访问的基础地址，用于在通知中生成跳转链接，如 "http://alert.example.com:8080"
 }
 
 type WebhookConfig struct {
@@ -123,6 +131,9 @@ func Load(path string) (*Config, error) {
 	}
 	if cfg.Elasticsearch.Provider == "" {
 		cfg.Elasticsearch.Provider = "elasticsearch"
+	}
+	if cfg.Web.Listen == "" {
+		cfg.Web.Listen = ":8080"
 	}
 	return &cfg, nil
 }

@@ -11,6 +11,7 @@ import (
 	"elasticsearch-alert/internal/config"
 	"elasticsearch-alert/internal/elasticsearch"
 	"elasticsearch-alert/internal/notification"
+	"elasticsearch-alert/internal/web"
 )
 
 func main() {
@@ -41,6 +42,17 @@ func main() {
 	if err != nil {
 		log.Fatalf("init alert engine error: %v", err)
 	}
+
+	// 启动内置 Web 服务，用于查看单条日志详情
+	if cfg.Web.Enabled {
+		webServer := web.NewServer(cfg, esClient)
+		go func() {
+			if err := webServer.Start(); err != nil {
+				log.Printf("web server error: %v", err)
+			}
+		}()
+	}
+
 	if err := engine.Start(); err != nil {
 		log.Fatalf("start engine error: %v", err)
 	}

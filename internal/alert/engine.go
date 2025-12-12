@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/url"
 	"strings"
 	"time"
 
@@ -228,14 +229,26 @@ func (e *Engine) renderBody(r Rule, count int, samples []map[string]any) string 
 			b.WriteString("\n")
 		}
 
-		// 详细日志链接：指向 Elasticsearch 中该条文档的 _doc API，仅查看本次命中的这一条日志
-		if indexName != "" && docID != "" && len(e.cfg.Elasticsearch.Addresses) > 0 {
-			base := e.cfg.Elasticsearch.Addresses[0]
-			base = strings.TrimRight(base, "/")
-			detailURL := fmt.Sprintf("%s/%s/_doc/%s?pretty", base, indexName, docID)
-			b.WriteString("\n🔗 **详细日志链接：** ")
-			b.WriteString(detailURL)
-			b.WriteString("\n")
+		// 详细日志链接：优先指向本服务提供的 Web 页面，其次回退到直接访问 ES 的 _doc API
+		if indexName != "" && docID != "" {
+			if e.cfg.Web.BaseURL != "" {
+				base := strings.TrimRight(e.cfg.Web.BaseURL, "/")
+				detailURL := fmt.Sprintf("%s/logs?index=%s&id=%s",
+					base,
+					url.QueryEscape(indexName),
+					url.QueryEscape(docID),
+				)
+				b.WriteString("\n🔗 **详细日志链接：** ")
+				b.WriteString(detailURL)
+				b.WriteString("\n")
+			} else if len(e.cfg.Elasticsearch.Addresses) > 0 {
+				base := e.cfg.Elasticsearch.Addresses[0]
+				base = strings.TrimRight(base, "/")
+				detailURL := fmt.Sprintf("%s/%s/_doc/%s?pretty", base, indexName, docID)
+				b.WriteString("\n🔗 **详细日志链接：** ")
+				b.WriteString(detailURL)
+				b.WriteString("\n")
+			}
 		}
 	}
 

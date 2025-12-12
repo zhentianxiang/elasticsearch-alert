@@ -125,3 +125,31 @@ func (c *Client) Search(index string, body *bytes.Buffer) (*Response, error) {
 		}, nil
 	}
 }
+
+// Get 根据索引和文档 ID 获取单条文档详情
+func (c *Client) Get(index, id string) (*Response, error) {
+	switch c.provider {
+	case "opensearch":
+		res, err := c.os.Get(index, id)
+		if err != nil {
+			return nil, err
+		}
+		return &Response{
+			Body:       res.Body,
+			statusCode: res.StatusCode,
+			raw:        res.String(),
+			isError:    res.IsError(),
+		}, nil
+	default:
+		res, err := c.es.Get(index, id)
+		if err != nil {
+			return nil, err
+		}
+		return &Response{
+			Body:       res.Body,
+			statusCode: res.StatusCode,
+			raw:        res.String(),
+			isError:    res.IsError(),
+		}, nil
+	}
+}
