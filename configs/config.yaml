@@ -20,6 +20,9 @@ web:
   listen: ":8080"
   baseURL: "http://localhost:8080"
 
+logging:
+  level: "INFO"   # 可选: INFO 或 DEBUG（不区分大小写）
+
 notifications:
   webhook:
     url: ""
